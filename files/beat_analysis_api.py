@@ -7,6 +7,12 @@ import os
 import json
 from beat_analyzer import AudioFeatureExtractor
 import uvicorn
+from files.link_based_analytics import LinkBasedAnalyticsExtractor, PlatformAnalytics
+from pydantic import BaseModel
+import dataclasses
+
+class SpotifyProfileRequest(BaseModel):
+    spotify_url: str
 
 app = FastAPI(title="Beat Analysis API")
 
@@ -56,6 +62,26 @@ async def analyze_beat(audio_file: UploadFile = File(...)):
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "message": "Beat Analysis API is running"}
+
+@app.post("/analyze-spotify-profile")
+async def analyze_spotify_profile(request: SpotifyProfileRequest):
+    extractor = LinkBasedAnalyticsExtractor()
+    try:
+        analytics_data = extractor.extract_spotify_data(request.spotify_url)
+        if analytics_data:
+            return {
+                "success": True,
+                "platform": "spotify",
+                "data": dataclasses.asdict(analytics_data)
+            }
+        else:
+            raise HTTPException(status_code=404, detail="Could not extract Spotify profile data. The profile might be private, invalid, or the page structure might have changed.")
+    except Exception as e:
+        # Log the exception for debugging if a logger is available
+        # print(f"Error during Spotify extraction: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to analyze Spotify profile: {str(e)}")
+    finally:
+        extractor.cleanup()
 
 if __name__ == "__main__":
     print("🎵 Starting Beat Analysis API on http://localhost:8000")

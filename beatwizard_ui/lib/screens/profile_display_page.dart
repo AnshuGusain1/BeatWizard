@@ -1,3 +1,5 @@
+import 'dart:convert'; // For jsonEncode and jsonDecode
+import 'package:http/http.dart' as http; // For HTTP requests
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/user_service.dart';
@@ -10,10 +12,15 @@ class ProfileDisplayPage extends StatefulWidget {
 }
 
 class _ProfileDisplayPageState extends State<ProfileDisplayPage> {
+  final TextEditingController _spotifyUrlController = TextEditingController();
   final UserService _userService = UserService();
   Map<String, dynamic>? _profile;
   bool _isLoading = true;
   String? _error;
+
+  Map<String, dynamic>? _spotifyAnalytics;
+  bool _isFetchingSpotifyData = false;
+  String? _spotifyError;
 
   @override
   void initState() {
@@ -32,6 +39,66 @@ class _ProfileDisplayPageState extends State<ProfileDisplayPage> {
       setState(() {
         _error = e.toString();
         _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _spotifyUrlController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchSpotifyAnalytics(String url) async {
+    if (url.isEmpty) {
+      setState(() {
+        _spotifyError = "Spotify URL cannot be empty.";
+      });
+      return;
+    }
+
+    setState(() {
+      _isFetchingSpotifyData = true;
+      _spotifyAnalytics = null;
+      _spotifyError = null;
+    });
+
+    try {
+      // IMPORTANT: Replace with your actual backend URL.
+      // For local development with Android emulator, use 10.0.2.2
+      // For web or iOS simulator on same machine, localhost or 127.0.0.1 might work.
+      final backendUrl = Uri.parse('http://127.0.0.1:8000/analyze-spotify-profile');
+
+      final response = await http.post(
+        backendUrl,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'spotify_url': url}),
+      );
+
+      if (response.statusCode == 200) {
+        final responseBody = jsonDecode(response.body);
+        if (responseBody['success'] == true && responseBody['data'] != null) {
+          setState(() {
+            _spotifyAnalytics = responseBody['data'] as Map<String, dynamic>;
+          });
+        } else {
+          setState(() {
+            _spotifyError = responseBody['detail'] ?? 'Failed to get Spotify data.';
+          });
+        }
+      } else {
+        final responseBody = jsonDecode(response.body);
+        setState(() {
+          _spotifyError = "Error: ${response.statusCode}. ${responseBody['detail'] ?? 'Could not connect to server.'}";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _spotifyError = "An error occurred: ${e.toString()}";
+      });
+    } finally {
+      setState(() {
+        _isFetchingSpotifyData = false;
       });
     }
   }
@@ -353,7 +420,204 @@ class _ProfileDisplayPageState extends State<ProfileDisplayPage> {
                         ],
                       ),
                       
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 32), // Spacing
+
+                      // Spotify Analysis Section
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.green.withOpacity(0.1), // Spotify-like green
+                              Colors.black.withOpacity(0.1),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.green.withOpacity(0.3)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Analyze Spotify Profile',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: _spotifyUrlController,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                hintText: 'Paste Spotify artist/profile URL here',
+                                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                                prefixIcon: Icon(Icons.link, color: Colors.green.shade300),
+                                filled: true,
+                                fillColor: Colors.white.withOpacity(0.05),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.green.shade300),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                final url = _spotifyUrlController.text.trim();
+                                if (url.isNotEmpty) {
+                                  _fetchSpotifyAnalytics(url);
+                                } else {
+                                  // Optionally show a snackbar or inline error if URL is empty
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Please enter a Spotify URL.'),
+                                      backgroundColor: Colors.orange,
+                                    ),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.analytics_outlined, color: Colors.white),
+                              label: const Text('Get Insights', style: TextStyle(color: Colors.white)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green.shade600,
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                            // Display Area for Loading, Error, or Analytics Data
+                            const SizedBox(height: 20),
+                            if (_isFetchingSpotifyData)
+                              const Center(child: CircularProgressIndicator(color: Colors.green))
+                            else if (_spotifyError != null)
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.error_outline, color: Colors.red.shade300, size: 28),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        _spotifyError!,
+                                        style: TextStyle(color: Colors.red.shade200, fontSize: 15),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            else if (_spotifyAnalytics != null)
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.white.withOpacity(0.05),
+                                      Colors.white.withOpacity(0.02),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _spotifyAnalytics!['username'] ?? 'Unknown Artist',
+                                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.people_alt_outlined, color: Colors.green.shade300, size: 18),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '${_spotifyAnalytics!['followers'] ?? 0} followers',
+                                          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16),
+                                        ),
+                                      ],
+                                    ),
+                                    if (_spotifyAnalytics!['growth_metrics'] != null && _spotifyAnalytics!['growth_metrics']['monthly_listeners'] != null) ...[
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.headset_mic_outlined, color: Colors.green.shade300, size: 18),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '${_spotifyAnalytics!['growth_metrics']['monthly_listeners']} monthly listeners',
+                                            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Top Content:',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    if ((_spotifyAnalytics!['top_content'] as List?)?.isNotEmpty ?? false)
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: (_spotifyAnalytics!['top_content'] as List)
+                                            .map<Widget>((contentItem) {
+                                          final item = contentItem as Map<String, dynamic>;
+                                          return Padding(
+                                            padding: const EdgeInsets.only(bottom: 8.0),
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.music_note_outlined, color: Colors.green.shade400, size: 16),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    item['title'] ?? 'Unknown Track',
+                                                    style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                // If play counts are available and non-zero:
+                                                // if (item['plays'] != null && item['plays'] > 0)
+                                                //   Text(
+                                                //     ' - ${item['plays']} plays',
+                                                //     style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+                                                //   ),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList(),
+                                      )
+                                    else
+                                      Text(
+                                        'No top content found or available.',
+                                        style: TextStyle(color: Colors.white.withOpacity(0.6)),
+                                      ),
+                                  ],
+                                ),
+                              ).animate().fadeIn(),
+                          ],
+                        ),
+                      ).animate().fadeIn(delay: 900.ms).slideY(begin: 0.3),
+
+                      const SizedBox(height: 32), // Spacing before next element (e.g., Recent Activity)
                       
                       // Recent Activity Card
                       Container(
