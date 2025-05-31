@@ -17,6 +17,8 @@ class MainLayout extends StatefulWidget {
 }
 
 class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
+  static bool _hasAnimated = false;
+  late final bool _shouldAnimate;
   late TabController _tabController;
   late AnimationController _backgroundController;
 
@@ -34,19 +36,22 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
       case '/profile/display':
         return 4;
       default:
-        return 0; // Default to strategy
+        return 4; // Default to strategy
     }
   }
 
   @override
   void initState() {
     super.initState();
+    _shouldAnimate = !_hasAnimated;
+    if (!_hasAnimated) {
+      _hasAnimated = true;
+    }
     _tabController = TabController(
       length: 5,
       vsync: this,
       initialIndex: _getSelectedIndex(),
     );
-    
     _backgroundController = AnimationController(
       duration: const Duration(seconds: 20),
       vsync: this,
@@ -192,6 +197,201 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final appBar = Container(
+      height: 120,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.black.withOpacity(0.3),
+            Colors.transparent,
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withOpacity(0.1),
+                Colors.white.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.1),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                spreadRadius: 5,
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Logo section
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: _buildBeatWizardLogo(),
+              ),
+              const SizedBox(width: 12),
+              ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: [
+                    Colors.white,
+                    Theme.of(context).colorScheme.primary,
+                    Colors.white,
+                  ],
+                ).createShader(bounds),
+                child: Text(
+                  'BeatWizard',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 20,
+                      ),
+                ),
+              ),
+              const Spacer(),
+              // Status indicator
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.green.withOpacity(0.2),
+                      Colors.green.withOpacity(0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Online',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.green,
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    final bottomNavBar = Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.black.withOpacity(0.3),
+            Colors.black.withOpacity(0.1),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.1),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 20,
+            spreadRadius: 5,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(25),
+        child: TabBar(
+          controller: _tabController,
+          onTap: _onTabTapped,
+          indicator: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white.withOpacity(0.5),
+          indicatorSize: TabBarIndicatorSize.tab,
+          dividerColor: Colors.transparent,
+          splashBorderRadius: BorderRadius.circular(20),
+          tabs: [
+            _buildNavTab(
+              icon: Icons.analytics_outlined,
+              selectedIcon: Icons.analytics,
+              label: 'Strategy',
+              isSelected: _getSelectedIndex() == 0,
+            ),
+            _buildNavTab(
+              icon: Icons.explore_outlined,
+              selectedIcon: Icons.explore,
+              label: 'Explore',
+              isSelected: _getSelectedIndex() == 1,
+            ),
+            _buildNavTab(
+              icon: Icons.search_outlined,
+              selectedIcon: Icons.search,
+              label: 'Search',
+              isSelected: _getSelectedIndex() == 2,
+            ),
+            _buildNavTab(
+              icon: Icons.add_circle_outline,
+              selectedIcon: Icons.add_circle,
+              label: 'Upload',
+              isSelected: _getSelectedIndex() == 3,
+            ),
+            _buildNavTab(
+              icon: Icons.person_outline,
+              selectedIcon: Icons.person,
+              label: 'Profile',
+              isSelected: _getSelectedIndex() == 4,
+            ),
+          ],
+        ),
+      ),
+    );
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E21),
       body: Container(
@@ -232,213 +432,19 @@ class _MainLayoutState extends State<MainLayout> with TickerProviderStateMixin {
                 );
               },
             ),
-            
             // Main content area
             Column(
               children: [
-                // Custom App Bar
-                Container(
-                  height: 120,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.3),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                  child: SafeArea(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.white.withOpacity(0.1),
-                            Colors.white.withOpacity(0.05),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(25),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.1),
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 20,
-                            spreadRadius: 5,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          // Logo section
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                                  Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                                  blurRadius: 10,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: _buildBeatWizardLogo(),
-                          ),
-                          const SizedBox(width: 12),
-                          ShaderMask(
-                            shaderCallback: (bounds) => LinearGradient(
-                              colors: [
-                                Colors.white,
-                                Theme.of(context).colorScheme.primary,
-                                Colors.white,
-                              ],
-                            ).createShader(bounds),
-                            child: Text(
-                              'BeatWizard',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 20,
-                                  ),
-                            ),
-                          ),
-                          const Spacer(),
-                          // Status indicator
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.green.withOpacity(0.2),
-                                  Colors.green.withOpacity(0.1),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.green.withOpacity(0.3)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.green,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Online',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: Colors.green,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ).animate().fadeIn().slideY(begin: -0.5),
-                
+                _shouldAnimate
+                  ? appBar.animate().fadeIn().slideY(begin: -0.5)
+                  : appBar,
                 // Content area
                 Expanded(
                   child: widget.child,
                 ),
-                
-                // Bottom Navigation Bar
-                Container(
-                  margin: const EdgeInsets.all(20),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.black.withOpacity(0.3),
-                        Colors.black.withOpacity(0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(25),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 20,
-                        spreadRadius: 5,
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(25),
-                    child: TabBar(
-                      controller: _tabController,
-                      onTap: _onTabTapped,
-                      indicator: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                            Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      labelColor: Colors.white,
-                      unselectedLabelColor: Colors.white.withOpacity(0.5),
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      dividerColor: Colors.transparent,
-                      splashBorderRadius: BorderRadius.circular(20),
-                      tabs: [
-                        _buildNavTab(
-                          icon: Icons.analytics_outlined,
-                          selectedIcon: Icons.analytics,
-                          label: 'Strategy',
-                          isSelected: _getSelectedIndex() == 0,
-                        ),
-                        _buildNavTab(
-                          icon: Icons.explore_outlined,
-                          selectedIcon: Icons.explore,
-                          label: 'Explore',
-                          isSelected: _getSelectedIndex() == 1,
-                        ),
-                        _buildNavTab(
-                          icon: Icons.search_outlined,
-                          selectedIcon: Icons.search,
-                          label: 'Search',
-                          isSelected: _getSelectedIndex() == 2,
-                        ),
-                        _buildNavTab(
-                          icon: Icons.add_circle_outline,
-                          selectedIcon: Icons.add_circle,
-                          label: 'Upload',
-                          isSelected: _getSelectedIndex() == 3,
-                        ),
-                        _buildNavTab(
-                          icon: Icons.person_outline,
-                          selectedIcon: Icons.person,
-                          label: 'Profile',
-                          isSelected: _getSelectedIndex() == 4,
-                        ),
-                      ],
-                    ),
-                  ),
-                ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.5),
+                _shouldAnimate
+                  ? bottomNavBar.animate().fadeIn(delay: 300.ms).slideY(begin: 0.5)
+                  : bottomNavBar,
               ],
             ),
           ],

@@ -13,6 +13,8 @@ class UploadPage extends StatefulWidget {
 }
 
 class _UploadPageState extends State<UploadPage> with TickerProviderStateMixin {
+  static bool _hasAnimated = false;
+  late final bool _shouldAnimate;
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _beatService = BeatService();
@@ -28,6 +30,10 @@ class _UploadPageState extends State<UploadPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    _shouldAnimate = !_hasAnimated;
+    if (!_hasAnimated) {
+      _hasAnimated = true;
+    }
     _pulseController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
@@ -150,6 +156,75 @@ class _UploadPageState extends State<UploadPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final header = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withOpacity(0.15),
+            Colors.white.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            spreadRadius: 5,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                  Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              Icons.cloud_upload_outlined,
+              size: 48,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              colors: [
+                Colors.white,
+                Theme.of(context).colorScheme.primary,
+                Colors.white,
+              ],
+            ).createShader(bounds),
+            child: Text(
+              'Share Your Beat',
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 32,
+                  ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Upload your masterpiece to the world',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 16,
+                ),
+          ),
+        ],
+      ),
+    );
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -167,406 +242,658 @@ class _UploadPageState extends State<UploadPage> with TickerProviderStateMixin {
           key: _formKey,
           child: Column(
             children: [
-              // Header Section
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.white.withOpacity(0.15),
-                      Colors.white.withOpacity(0.05),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 20,
-                      spreadRadius: 5,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                            Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              _shouldAnimate
+                ? header.animate().fadeIn().slideY(begin: -0.3)
+                : header,
+              const SizedBox(height: 32),
+              _shouldAnimate
+                ? AnimatedBuilder(
+                    animation: _pulseController,
+                    builder: (context, child) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(32),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.white.withOpacity(0.1 + _pulseController.value * 0.05),
+                              Colors.white.withOpacity(0.05 + _pulseController.value * 0.03),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: _selectedFileBytes != null 
+                                ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
+                                : Colors.white.withOpacity(0.1 + _pulseController.value * 0.1),
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _selectedFileBytes != null
+                                  ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+                                  : Colors.black.withOpacity(0.05),
+                              blurRadius: 20,
+                              spreadRadius: 5,
+                            ),
                           ],
                         ),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Icon(
-                        Icons.cloud_upload_outlined,
-                        size: 48,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ShaderMask(
-                      shaderCallback: (bounds) => LinearGradient(
-                        colors: [
-                          Colors.white,
-                          Theme.of(context).colorScheme.primary,
-                          Colors.white,
-                        ],
-                      ).createShader(bounds),
-                      child: Text(
-                        'Share Your Beat',
-                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 32,
-                            ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Upload your masterpiece to the world',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 16,
-                          ),
-                    ),
-                  ],
-                ),
-              ).animate().fadeIn().slideY(begin: -0.3),
-
-              const SizedBox(height: 32),
-
-              // File Upload Section
-              AnimatedBuilder(
-                animation: _pulseController,
-                builder: (context, child) {
-                  return Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.white.withOpacity(0.1 + _pulseController.value * 0.05),
-                          Colors.white.withOpacity(0.05 + _pulseController.value * 0.03),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: _selectedFileBytes != null 
-                            ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
-                            : Colors.white.withOpacity(0.1 + _pulseController.value * 0.1),
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _selectedFileBytes != null
-                              ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
-                              : Colors.black.withOpacity(0.05),
-                          blurRadius: 20,
-                          spreadRadius: 5,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        if (_selectedFileBytes == null) ...[
-                          // Empty state with beautiful animation
-                          GestureDetector(
-                            onTap: _pickFile,
-                            child: Container(
-                              height: 200,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.white.withOpacity(0.05),
-                                    Colors.white.withOpacity(0.02),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.1),
-                                  style: BorderStyle.solid,
-                                ),
-                              ),
-                              child: Stack(
-                                children: [
-                                  // Animated waves
-                                  AnimatedBuilder(
-                                    animation: _waveController,
-                                    builder: (context, child) {
-                                      return Positioned.fill(
-                                        child: CustomPaint(
-                                          painter: WavePainter(
-                                            progress: _waveController.value,
-                                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  
-                                  Center(
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.cloud_upload_outlined,
-                                          size: 64,
-                                          color: Colors.white.withOpacity(0.7),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Text(
-                                          'Drag & Drop Your Beat',
-                                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          'or tap to browse files',
-                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                color: Colors.white.withOpacity(0.6),
-                                              ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [
-                                                Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                                                Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                              ],
-                                            ),
-                                            borderRadius: BorderRadius.circular(25),
-                                            border: Border.all(
-                                              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                                            ),
-                                          ),
-                                          child: Text(
-                                            'MP3, WAV, M4A supported',
-                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                  color: Theme.of(context).colorScheme.primary,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ] else ...[
-                          // File selected state
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                  Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
+                        child: Column(
+                          children: [
+                            if (_selectedFileBytes == null) ...[
+                              // Empty state with beautiful animation
+                              GestureDetector(
+                                onTap: _pickFile,
+                                child: Container(
+                                  height: 200,
+                                  width: double.infinity,
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                                        Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                        Colors.white.withOpacity(0.05),
+                                        Colors.white.withOpacity(0.02),
                                       ],
                                     ),
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.1),
+                                      style: BorderStyle.solid,
+                                    ),
                                   ),
-                                  child: Icon(
-                                    Icons.audiotrack,
-                                    color: Theme.of(context).colorScheme.primary,
-                                    size: 32,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                  child: Stack(
                                     children: [
-                                      Text(
-                                        _selectedFileName!,
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w600,
+                                      // Animated waves
+                                      AnimatedBuilder(
+                                        animation: _waveController,
+                                        builder: (context, child) {
+                                          return Positioned.fill(
+                                            child: CustomPaint(
+                                              painter: WavePainter(
+                                                progress: _waveController.value,
+                                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                              ),
                                             ),
-                                        overflow: TextOverflow.ellipsis,
+                                          );
+                                        },
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Ready to upload',
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                              color: Colors.green,
-                                              fontWeight: FontWeight.w500,
+                                      
+                                      Center(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.cloud_upload_outlined,
+                                              size: 64,
+                                              color: Colors.white.withOpacity(0.7),
                                             ),
+                                            const SizedBox(height: 16),
+                                            Text(
+                                              'Drag & Drop Your Beat',
+                                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              'or tap to browse files',
+                                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                    color: Colors.white.withOpacity(0.6),
+                                                  ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                                                    Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                                  ],
+                                                ),
+                                                borderRadius: BorderRadius.circular(25),
+                                                border: Border.all(
+                                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                'MP3, WAV, M4A supported',
+                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                      color: Theme.of(context).colorScheme.primary,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                IconButton(
-                                  onPressed: () => setState(() {
-                                    _selectedFileBytes = null;
-                                    _selectedFileName = null;
-                                  }),
-                                  icon: Icon(
-                                    Icons.close,
-                                    color: Colors.white.withOpacity(0.7),
+                              ),
+                            ] else ...[
+                              // File selected state
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                      Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
                                   ),
                                 ),
-                              ],
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                            Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        Icons.audiotrack,
+                                        color: Theme.of(context).colorScheme.primary,
+                                        size: 32,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _selectedFileName!,
+                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Ready to upload',
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                  color: Colors.green,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () => setState(() {
+                                        _selectedFileBytes = null;
+                                        _selectedFileName = null;
+                                      }),
+                                      icon: Icon(
+                                        Icons.close,
+                                        color: Colors.white.withOpacity(0.7),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  )
+                : AnimatedBuilder(
+                    animation: _pulseController,
+                    builder: (context, child) {
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(32),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.white.withOpacity(0.1 + _pulseController.value * 0.05),
+                              Colors.white.withOpacity(0.05 + _pulseController.value * 0.03),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: _selectedFileBytes != null 
+                                ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
+                                : Colors.white.withOpacity(0.1 + _pulseController.value * 0.1),
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _selectedFileBytes != null
+                                  ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+                                  : Colors.black.withOpacity(0.05),
+                              blurRadius: 20,
+                              spreadRadius: 5,
                             ),
-                          ).animate().fadeIn().scale(),
-                        ],
-                      ],
-                    ),
-                  );
-                },
-              ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.3),
-
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            if (_selectedFileBytes == null) ...[
+                              // Empty state with beautiful animation
+                              GestureDetector(
+                                onTap: _pickFile,
+                                child: Container(
+                                  height: 200,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.white.withOpacity(0.05),
+                                        Colors.white.withOpacity(0.02),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.1),
+                                      style: BorderStyle.solid,
+                                    ),
+                                  ),
+                                  child: Stack(
+                                    children: [
+                                      // Animated waves
+                                      AnimatedBuilder(
+                                        animation: _waveController,
+                                        builder: (context, child) {
+                                          return Positioned.fill(
+                                            child: CustomPaint(
+                                              painter: WavePainter(
+                                                progress: _waveController.value,
+                                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      
+                                      Center(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.cloud_upload_outlined,
+                                              size: 64,
+                                              color: Colors.white.withOpacity(0.7),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Text(
+                                              'Drag & Drop Your Beat',
+                                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              'or tap to browse files',
+                                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                                    color: Colors.white.withOpacity(0.6),
+                                                  ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                                                    Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                                  ],
+                                                ),
+                                                borderRadius: BorderRadius.circular(25),
+                                                border: Border.all(
+                                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                'MP3, WAV, M4A supported',
+                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                      color: Theme.of(context).colorScheme.primary,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ] else ...[
+                              // File selected state
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                      Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                            Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        Icons.audiotrack,
+                                        color: Theme.of(context).colorScheme.primary,
+                                        size: 32,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _selectedFileName!,
+                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Ready to upload',
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                  color: Colors.green,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () => setState(() {
+                                        _selectedFileBytes = null;
+                                        _selectedFileName = null;
+                                      }),
+                                      icon: Icon(
+                                        Icons.close,
+                                        color: Colors.white.withOpacity(0.7),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  ),
               const SizedBox(height: 32),
 
               // Form Fields
-              Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.white.withOpacity(0.1),
-                      Colors.white.withOpacity(0.05),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Beat Details',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
+              _shouldAnimate
+                ? Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.1),
+                          Colors.white.withOpacity(0.05),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.white.withOpacity(0.1)),
                     ),
-                    const SizedBox(height: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Beat Details',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        const SizedBox(height: 24),
 
-                    // Title Field
-                    _buildStyledTextField(
-                      controller: _titleController,
-                      label: 'Beat Title',
-                      icon: Icons.music_note_outlined,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a title';
-                        }
-                        return null;
-                      },
-                    ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.2),
+                        // Title Field
+                        _buildStyledTextField(
+                          controller: _titleController,
+                          label: 'Beat Title',
+                          icon: Icons.music_note_outlined,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a title';
+                            }
+                            return null;
+                          },
+                        ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.2),
 
-                    const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                    // Description Field
-                    _buildStyledTextField(
-                      controller: _descriptionController,
-                      label: 'Description (Optional)',
-                      icon: Icons.description_outlined,
-                      maxLines: 4,
-                    ).animate().fadeIn(delay: 500.ms).slideX(begin: 0.2),
-                  ],
-                ),
-              ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.3),
+                        // Description Field
+                        _buildStyledTextField(
+                          controller: _descriptionController,
+                          label: 'Description (Optional)',
+                          icon: Icons.description_outlined,
+                          maxLines: 4,
+                        ).animate().fadeIn(delay: 500.ms).slideX(begin: 0.2),
+                      ],
+                    ),
+                  ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.3)
+                : Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.1),
+                          Colors.white.withOpacity(0.05),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Beat Details',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Title Field
+                        _buildStyledTextField(
+                          controller: _titleController,
+                          label: 'Beat Title',
+                          icon: Icons.music_note_outlined,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a title';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Description Field
+                        _buildStyledTextField(
+                          controller: _descriptionController,
+                          label: 'Description (Optional)',
+                          icon: Icons.description_outlined,
+                          maxLines: 4,
+                        ),
+                      ],
+                    ),
+                  ),
 
               const SizedBox(height: 32),
 
               // Upload Button
-              Container(
-                width: double.infinity,
-                height: 64,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
-                      blurRadius: 20,
-                      spreadRadius: 3,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  onPressed: _isUploading ? null : _uploadBeat,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
+              _shouldAnimate
+                ? Container(
+                    width: double.infinity,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Theme.of(context).colorScheme.primary,
+                          Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                        ],
+                      ),
                       borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                          blurRadius: 20,
+                          spreadRadius: 3,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _isUploading ? null : _uploadBeat,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: _isUploading
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 3,
+                                    value: _uploadProgress,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Uploading... ${(_uploadProgress * 100).round()}%',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.rocket_launch, color: Colors.white, size: 28),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Upload Beat',
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 20,
+                                      ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.3)
+                : Container(
+                    width: double.infinity,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Theme.of(context).colorScheme.primary,
+                          Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                          blurRadius: 20,
+                          spreadRadius: 3,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _isUploading ? null : _uploadBeat,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: _isUploading
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 3,
+                                    value: _uploadProgress,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Uploading... ${(_uploadProgress * 100).round()}%',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.rocket_launch, color: Colors.white, size: 28),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Upload Beat',
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 20,
+                                      ),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
-                  child: _isUploading
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 32,
-                              height: 32,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 3,
-                                value: _uploadProgress,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Uploading... ${(_uploadProgress * 100).round()}%',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.rocket_launch, color: Colors.white, size: 28),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Upload Beat',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 20,
-                                  ),
-                            ),
-                          ],
-                        ),
-                ),
-              ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.3),
 
               const SizedBox(height: 24),
             ],
